@@ -110,8 +110,9 @@ sudo pip3 install -r ${HOME_EXT}/requirements.txt
 #--------------------------------------------------
 
 echo -e "Creating odoo service"
+sudo touch /etc/systemd/system/$CONFIG.service
 # Modify the file below as required for your configuration
-cat <<EOF > ~/etc/systemd/system/$CONFIG.service
+cat <<EOF > /etc/systemd/system/$CONFIG.service
 [Unit]
 Description=${CONFIG}
 Requires=postgresql.service
