@@ -13,7 +13,8 @@
 
 # User is used for naming path, service, and database
 # I often have multiple installs on one machine and like the convention odoo{version}{com or ent}{counter}
-USER="odoo17enttst2"
+
+USER="odoo17com1"
 HOME="/opt/$USER"
 VERSION="17.0"
 PORT="8069"
@@ -39,29 +40,29 @@ sudo apt upgrade -y
 # Install postgresql
 #--------------------------------------------------
 
-echo -e "\n---- Install PostgreSQL Server ----"
+echo "\n---- Install PostgreSQL Server ----"
 sudo apt-get install postgresql postgresql-server-dev-all -y
 
-echo -e "\n---- Creating the ODOO PostgreSQL User  ----"
+echo "\n---- Creating the ODOO PostgreSQL User  ----"
 sudo su - postgres -c "createuser -s $USER"
 
 #--------------------------------------------------
 # Install python
 #--------------------------------------------------
 
-echo -e "\n--- Installing Python 3 + pip3 --"
+echo "\n--- Installing Python 3 + pip3 --"
 sudo apt install python3 python3-pip -y
 
 #--------------------------------------------------
 # Create odoo user and log path
 #--------------------------------------------------
 
-echo -e "\n---- Create odoo system user ----"
+echo "\n---- Create odoo system user ----"
 sudo adduser --system --quiet --shell=/bin/bash --home=$HOME --gecos '$USER' --group $USER
 #The user should also be added to the sudo'ers group.
 sudo adduser $USER sudo
 
-echo -e "\n---- Create Log directory ----"
+echo "\n---- Create Log directory ----"
 sudo mkdir /var/log/$USER
 sudo chown $USER:$USER /var/log/$USER
 
@@ -69,11 +70,11 @@ sudo chown $USER:$USER /var/log/$USER
 # Install odoo
 #--------------------------------------------------
 
-echo -e "\n==== Installing ODOO Server ===="
+echo "\n==== Installing ODOO Server ===="
 sudo git clone https://www.github.com/odoo/odoo --depth 1 --branch $VERSION $HOME
 
 if [ "$ENTERPRISE" = "True" ]; then
-    echo -e "\n==== Installing ODOO Server ===="
+    echo "\n==== Installing ODOO Server ===="
 
     sudo su $USER -c "mkdir $HOME/enterprise"
     sudo su $USER -c "mkdir $HOME/enterprise/addons"
@@ -89,16 +90,16 @@ if [ "$ENTERPRISE" = "True" ]; then
         GITHUB_RESPONSE=$(sudo git clone --depth 1 --branch $VERSION https://www.github.com/odoo/enterprise "$HOME/enterprise/addons" 2>&1)
     done
 
-    echo -e "\n---- Added Enterprise code under $HOME/enterprise/addons ----"
+    echo "\n---- Added Enterprise code under $HOME/enterprise/addons ----"
 fi
 
-echo -e "\n---- Create custom module directory ----"
+echo "\n---- Create custom module directory ----"
 sudo su $USER -c "mkdir $HOME/custom-addons"
 
-echo -e "\n---- Setting permissions on home folder ----"
+echo "\n---- Setting permissions on home folder ----"
 sudo chown -R $USER:$USER $HOME/*
 
-echo -e "* Create server config file"
+echo "* Create server config file"
 
 # Modify the file below as required for your configuration
 sudo cat <<EOF > /etc/${CONFIG}.conf
@@ -119,21 +120,21 @@ sudo chmod 640 /etc/${CONFIG}.conf
 #--------------------------------------------------
 
 if [ "$VENV" = "True" ]; then
-    echo -e "Installing dependencies in virtual environment"
+    echo "Installing dependencies in virtual environment"
     python3 -m venv $HOME/$USER-venv
     . $HOME/$USER-venv/bin/activate
 
     # Add venv to EXECSTART
     EXECSTART="$HOME/$USER-ven/bin/python3.10 $EXECSTART"
 else
-    echo -e "Installing dependencies"
+    echo "Installing dependencies"
 fi
 
 # These packages are for odoo 17.0 - UPDATE IF NOT USING 17.0
 sudo apt install build-essential wget git python3.11-dev python3.11-venv libfreetype-dev libxml2-dev libzip-dev libsasl2-dev node-less libjpeg-dev zlib1g-dev libpq-dev libxslt1-dev libldap2-dev libtiff5-dev libopenjp2-7-dev libcap-dev -y
 sudo apt install wkhtmltopdf -y
 
-echo -e "\n---- Install python packages/requirements ----"
+echo "\n---- Install python packages/requirements ----"
 
 sudo pip3 install wheel setuptools pip --upgrade
 sudo pip3 install -r ${HOME}/requirements.txt
@@ -144,7 +145,7 @@ deactivate
 # Create service for odoo
 #--------------------------------------------------
 
-echo -e "Creating odoo service"
+echo "Creating odoo service"
 sudo touch /etc/systemd/system/$CONFIG.service
 # Modify the file below as required for your configuration
 cat <<EOF > /etc/systemd/system/$CONFIG.service
@@ -167,7 +168,7 @@ WantedBy=multi-user.target
 EOF
 
 sudo systemctl daemon-reload
-echo -e "Starting odoo"
+echo "Starting odoo"
 sudo systemctl enable --now ${CONFIG}
 
 #--------------------------------------------------
