@@ -125,7 +125,7 @@ if [ "$VENV" = "True" ]; then
     . $HOME/$USER-venv/bin/activate
 
     # Add venv to EXECSTART
-    EXECSTART="$HOME/$USER-ven/bin/python3.10 $EXECSTART"
+    EXECSTART="$HOME/$USER-venv/bin/python3.10 $EXECSTART"
 else
     echo "Installing dependencies"
 fi
