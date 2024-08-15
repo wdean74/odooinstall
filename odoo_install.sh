@@ -17,9 +17,8 @@
 USER="odoo17com1"
 HOME="/opt/$USER"
 VERSION="17.0"
-PORT="8069"
 # Enterprise?
-ENTERPRISE="True"
+ENTERPRISE="False"
 # Intall dependecies in venv?
 VENV="True"
 # Set the superadmin password
@@ -27,6 +26,7 @@ SUPERADMIN="stronglongpassphrase"
 CONFIG="${USER}"
 CONFPATH="/etc/$USER.conf"
 EXECSTART="$HOME/odoo-bin -c $CONFPATH"
+ADDONSPATH="${HOME}/addons,${HOME}/custom-addons"
 
 #--------------------------------------------------
 # Update and upgrade
@@ -51,7 +51,7 @@ sudo su - postgres -c "createuser -s $USER"
 #--------------------------------------------------
 
 echo "\n--- Installing Python 3 + pip3 --"
-sudo apt install python3 python3-pip -y
+sudo apt install python3.12 python3.12-dev python3.12-venv python3.12-pip -y
 
 #--------------------------------------------------
 # Create odoo user and log path
@@ -64,7 +64,8 @@ sudo adduser $USER sudo
 
 echo "\n---- Create Log directory ----"
 sudo mkdir /var/log/$USER
-sudo chown $USER:$USER /var/log/$USER
+sudo chown -R $USER:$USER /var/log/$USER
+sudo chmod -R 700 /var/log/$USER
 
 #--------------------------------------------------
 # Install odoo
@@ -76,8 +77,8 @@ sudo git clone https://www.github.com/odoo/odoo --depth 1 --branch $VERSION $HOM
 if [ "$ENTERPRISE" = "True" ]; then
     echo "\n==== Installing ODOO Server ===="
 
-    sudo su $USER -c "mkdir $HOME/enterprise"
-    sudo su $USER -c "mkdir $HOME/enterprise/addons"
+    sudo mkdir $HOME/enterprise
+    sudo mkdir $HOME/enterprise/addons
 
     GITHUB_RESPONSE=$(sudo git clone --depth 1 --branch $VERSION https://www.github.com/odoo/enterprise "$HOME/enterprise/addons" 2>&1)
     while [ $GITHUB_RESPONSE == *"Authentication"* ]; do
@@ -90,14 +91,19 @@ if [ "$ENTERPRISE" = "True" ]; then
         GITHUB_RESPONSE=$(sudo git clone --depth 1 --branch $VERSION https://www.github.com/odoo/enterprise "$HOME/enterprise/addons" 2>&1)
     done
 
+    ADDONSPATH="$ADDONSPATH,${HOME}/enterprise/addons"
+
     echo "\n---- Added Enterprise code under $HOME/enterprise/addons ----"
 fi
 
 echo "\n---- Create custom module directory ----"
-sudo su $USER -c "mkdir $HOME/custom-addons"
+sudo mkdir -p $HOME/custom-addons
 
 echo "\n---- Setting permissions on home folder ----"
 sudo chown -R $USER:$USER $HOME/*
+sudo chown -R $USER:$USER $HOME
+sudo chmod -R 700 $HOME/*
+sudo chmod -R 700 $HOME
 
 echo "* Create server config file"
 
@@ -109,7 +115,8 @@ db_host = False
 db_port = False
 db_user = ${USER}
 db_password = False
-addons_path = ${HOME}/addons,${HOME}/custom-addons
+addons_path = ${ADDONSPATH}
+log_file = /var/log/$USER/odoo.log
 EOF
 
 sudo chown $USER:$USER /etc/${CONFIG}.conf
@@ -121,25 +128,32 @@ sudo chmod 640 /etc/${CONFIG}.conf
 
 if [ "$VENV" = "True" ]; then
     echo "Installing dependencies in virtual environment"
-    python3 -m venv $HOME/$USER-venv
+    python3.12 -m venv $HOME/$USER-venv
     . $HOME/$USER-venv/bin/activate
 
     # Add venv to EXECSTART
-    EXECSTART="$HOME/$USER-venv/bin/python3.10 $EXECSTART"
+    EXECSTART="$HOME/$USER-venv/bin/python3.12 $EXECSTART"
 else
     echo "Installing dependencies"
 fi
 
 # These packages are for odoo 17.0 - UPDATE IF NOT USING 17.0
-sudo apt install build-essential wget git python3.11-dev python3.11-venv libfreetype-dev libxml2-dev libzip-dev libsasl2-dev node-less libjpeg-dev zlib1g-dev libpq-dev libxslt1-dev libldap2-dev libtiff5-dev libopenjp2-7-dev libcap-dev python3-pypdf2 -y
+sudo apt install build-essential wget git libfreetype-dev libxml2-dev libzip-dev libsasl2-dev node-less libjpeg-dev zlib1g-dev libpq-dev libxslt1-dev libldap2-dev libtiff5-dev libopenjp2-7-dev libcap-dev -y
 sudo apt install wkhtmltopdf -y
 
 echo "\n---- Install python packages/requirements ----"
 
-sudo pip3 install wheel setuptools pip --upgrade
-sudo pip3 install -r ${HOME}/requirements.txt
+if [ "$VENV" = "True" ]; then
+    $HOME/$USER-venv/bin/pip install wheel setuptools pip --upgrade
+    $HOME/$USER-venv/bin/pip install -r ${HOME}/requirements.txt
+else
+    sudo pip3 install wheel setuptools pip --upgrade
+    sudo pip3 install -r ${HOME}/requirements.txt
+fi
 
-deactivate
+if [ "$VENV" = "True" ]; then
+    deactivate
+fi
 
 #--------------------------------------------------
 # Create service for odoo
@@ -169,6 +183,9 @@ EOF
 
 sudo systemctl daemon-reload
 echo "Starting odoo"
+sudo systemctl enable --now ${CONFIG}
+sudo systemctl restart ${CONFIG}
+sudo systemctl daemon-reload
 sudo systemctl enable --now ${CONFIG}
 
 #--------------------------------------------------
