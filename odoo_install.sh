@@ -131,7 +131,7 @@ else
 fi
 
 # These packages are for odoo 17.0 - UPDATE IF NOT USING 17.0
-sudo apt install build-essential wget git python3.11-dev python3.11-venv libfreetype-dev libxml2-dev libzip-dev libsasl2-dev node-less libjpeg-dev zlib1g-dev libpq-dev libxslt1-dev libldap2-dev libtiff5-dev libopenjp2-7-dev libcap-dev -y
+sudo apt install build-essential wget git python3.11-dev python3.11-venv libfreetype-dev libxml2-dev libzip-dev libsasl2-dev node-less libjpeg-dev zlib1g-dev libpq-dev libxslt1-dev libldap2-dev libtiff5-dev libopenjp2-7-dev libcap-dev python3-pypdf2 -y
 sudo apt install wkhtmltopdf -y
 
 echo "\n---- Install python packages/requirements ----"
