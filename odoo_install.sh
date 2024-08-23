@@ -51,7 +51,7 @@ sudo su - postgres -c "createuser -s $USER"
 #--------------------------------------------------
 
 echo "\n--- Installing Python 3 + pip3 --"
-sudo apt install python3.12 python3.12-dev python3.12-venv python3.12-pip -y
+sudo apt install python3.12 python3.12-dev python3.12-venv python3-pip -y
 
 #--------------------------------------------------
 # Create odoo user and log path
@@ -129,6 +129,7 @@ sudo chmod 640 /etc/${CONFIG}.conf
 if [ "$VENV" = "True" ]; then
     echo "Installing dependencies in virtual environment"
     python3.12 -m venv $HOME/$USER-venv
+    source $HOME/$USER-venv/bin/python3.12
     . $HOME/$USER-venv/bin/activate
 
     # Add venv to EXECSTART
